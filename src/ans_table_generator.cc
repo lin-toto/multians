@@ -80,9 +80,19 @@ Distribution ANSTableGenerator::generate_distribution_from_buffer(
             symbols_compact.push_back(i);
         }
     }
+
+    std::vector<std::pair<size_t, SYMBOL_TYPE>> freq_sym;
+    for(size_t i = 0; i < max_num_symbols; ++i) {
+        freq_sym.push_back(std::make_pair(freq_compact[i], symbols_compact[i]));
+    }
     
-    std::sort(freq_compact.begin(), freq_compact.end(),
-        [](size_t a, size_t b) {return a > b;});
+    std::sort(freq_sym.begin(), freq_sym.end(),
+        [](auto a, auto b) {return a.first > b.first;});
+
+    for(size_t i = 0; i < max_num_symbols; ++i) {
+        freq_compact[i] = freq_sym[i].first;
+        symbols_compact[i] = freq_sym[i].second;
+    }
     
     const size_t num_symbols = freq_compact.size();
     std::vector<double> prob_ans(num_symbols);
