@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-
+#include <fstream>
 #include "multians.h"
 
 // encoder configuration //
@@ -43,7 +43,7 @@ std::string readFile(const std::string &name, std::ios::ios_base::openmode mode)
     return str;
 }
 
-template<std::unsigned_integral ValueType>
+template<class ValueType>
 std::vector<ValueType> stringToSymbols(const std::string &str) {
     std::vector<ValueType> symbols;
     symbols.resize(str.length());
@@ -70,9 +70,9 @@ void run_file(long int num_threads, std::string fileName) {
     std::vector<std::pair<std::string, size_t>> timings_cuda;
     std::vector<std::pair<std::string, size_t>> timings_multicore;
 
-    std::cout << std::left << std::setw(5) << lambda << std::setfill(' ');
+    std::cout << std::left << std::setw(5) << 0 << std::setfill(' ');
 
-    auto textBuf = stringToSymbols<uint8_t>(readFile(fileName));
+    auto textBuf = stringToSymbols<uint8_t>(readFile(fileName, std::ios_base::in));
     auto dist = ANSTableGenerator::generate_distribution_from_buffer(
             SEED, NUM_STATES, textBuf.data(), textBuf.size());
 
@@ -90,10 +90,10 @@ void run_file(long int num_threads, std::string fileName) {
 
     // tANS-encode the generated data using the encoder table
     auto input_buffer = ANSEncoder::encode(
-            random_data->data(), input_size, encoder_table);
+            textBuf.data(), textBuf.size(), encoder_table);
 
     // allocate a buffer for the decoded output
-    auto output_buffer = std::make_shared<CUHDOutputBuffer>(input_size);
+    auto output_buffer = std::make_shared<CUHDOutputBuffer>(textBuf.size());
 
 #ifdef CUDA
 
@@ -139,8 +139,8 @@ void run_file(long int num_threads, std::string fileName) {
     output_buffer->reverse();
 
     // check for errors in decompressed data
-    if(cuhd::CUHDUtil::equals(random_data->data(),
-        output_buffer->get_decompressed_data().get(), input_size));
+    if(cuhd::CUHDUtil::equals(textBuf.data(),
+        output_buffer->get_decompressed_data().get(), textBuf.size()));
     else std::cout << "mismatch" << std::endl;
 #endif
 
@@ -157,13 +157,13 @@ void run_file(long int num_threads, std::string fileName) {
     output_buffer->reverse();
 
     // check for errors in decompressed data
-    if(cuhd::CUHDUtil::equals(random_data->data(),
-        output_buffer->get_decompressed_data().get(), input_size));
+    if(cuhd::CUHDUtil::equals(textBuf.data(),
+        output_buffer->get_decompressed_data().get(), textBuf.size()));
     else std::cout << "mismatch" << std::endl;
 #endif
 
     // print compressed size (bytes)
-    std::cout << std::left << std::setw(10)
+    std::cout << std::left << std::setw(20)
               << input_buffer->get_compressed_size() * sizeof(UNIT_TYPE)
               << std::setfill(' ');
 
@@ -322,7 +322,8 @@ int main(int argc, char **argv) {
     auto print_help = [&]() {
         std::cout << "USAGE: " << bin << " <compute device index> "
             << "<size of input in megabytes> "
-            << "<number of CPU threads>" << std::endl;
+            << "<number of CPU threads> "
+            << "[file name]"<< std::endl;
     };
 
     if(argc < 4) {print_help(); return 1;}
@@ -350,9 +351,9 @@ int main(int argc, char **argv) {
 	#endif
 	
 	// run the test
-    if (argv == 4)
+    if (argc == 4)
         run(size, threads);
-    else run(threads, argv[4]);
+    else run_file(threads, argv[4]);
     
     return 0;
 }

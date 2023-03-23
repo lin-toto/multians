@@ -1,8 +1,9 @@
-ARCH = 61
+ARCH = 75
 
 NVCC = nvcc
 NVCC_ARCH = -gencode arch=compute_$(ARCH),code=sm_$(ARCH)
-NVCC_FLAGS = --std=c++14 -O3 -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI
+NVCC_FLAGS = --std=c++20 -O3 -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI
+#NVCC_FLAGS = --std=c++20 -G -g -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI
 
 BIN = -o bin
 
