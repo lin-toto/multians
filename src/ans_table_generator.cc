@@ -66,7 +66,7 @@ Distribution ANSTableGenerator::generate_distribution_from_buffer(
     std::uint32_t frequencies[max_num_symbols];
     
     for(size_t i = 0; i < max_num_symbols; ++i)
-        frequencies[i] = 0;
+        frequencies[i] = 1;
     
     for(size_t i = 0; i < size; ++i)
         ++frequencies[in[i]];
