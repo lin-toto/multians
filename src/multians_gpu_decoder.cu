@@ -9,7 +9,7 @@
  *****************************************************************************/
 
 #include "cuhd_gpu_decoder.h"
-
+#include <iostream>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 

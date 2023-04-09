@@ -65,7 +65,7 @@ std::pair<std::string, size_t> cuhd::CUHDUtil::time(std::string s,
 bool cuhd::CUHDUtil::equals(SYMBOL_TYPE* a, SYMBOL_TYPE* b, size_t size) {
     for(size_t i = 0; i < size; ++i) {
         if(a[i] != b[i]) {
-        std::cout << "mismatch at: " << i << std::endl;
+//std::cout << "mismatch at: " << i << std::endl;
         return false;}}
 
     return true;

@@ -54,23 +54,28 @@ std::vector<ValueType> stringToSymbols(const std::string &str) {
     return symbols;
 }
 
+std::string jsonOutput(bool correct, unsigned int nSplit, size_t originalSize, size_t compressedSize, unsigned int elapsed) {
+    const char *jsonLiteral = R"({
+    "result_correct": %s,
+    "n_splits": %u,
+    "original_size_bytes": %llu,
+    "compressed_size_bytes": %llu,
+    "time": %u,
+    "throughput_mb": %.2f
+})";
+    float throughput = originalSize / (elapsed / 1000000.0) / 1024 / 1024;
+
+    char buf[200]; // Probably more than enough?
+    snprintf(buf, 200, jsonLiteral, correct ? "true" : "false", nSplit, originalSize, compressedSize, elapsed, throughput);
+
+    return buf;
+}
+
 void run_file(long int num_threads, std::string fileName) {
-
-    // print column headers
-    std::cout << "\u03BB | compressed size (bytes) | ";
-#ifdef MULTI
-    std::cout << "time [multicore] (\u03BCs) | ";
-#endif
-#ifdef CUDA
-    std::cout << "time [gpu decode] (\u03BCs)";
-#endif
-    std::cout << std::endl << std::endl;
-
     // vectors to record timings
     std::vector<std::pair<std::string, size_t>> timings_cuda;
     std::vector<std::pair<std::string, size_t>> timings_multicore;
 
-    std::cout << std::left << std::setw(5) << 0 << std::setfill(' ');
 
     auto textBuf = stringToSymbols<uint8_t>(readFile(fileName, std::ios_base::in));
     auto dist = ANSTableGenerator::generate_distribution_from_buffer(
@@ -129,7 +134,7 @@ void run_file(long int num_threads, std::string fileName) {
         gpu_out_buf, output_buffer->get_uncompressed_size(),
         gpu_table, gpu_decoder_memory, input_buffer->get_first_state(),
         input_buffer->get_first_bit(), decoder_table->get_num_entries(),
-        11, SUBSEQUENCE_SIZE, THREADS_PER_BLOCK);
+        16, SUBSEQUENCE_SIZE, THREADS_PER_BLOCK);
     TIMER_STOP
 
     // copy decompressed output from the GPU to the host system
@@ -139,45 +144,13 @@ void run_file(long int num_threads, std::string fileName) {
     output_buffer->reverse();
 
     // check for errors in decompressed data
-    if(cuhd::CUHDUtil::equals(textBuf.data(),
-        output_buffer->get_decompressed_data().get(), textBuf.size()));
-    else std::cout << "mismatch" << std::endl;
+    bool correct = cuhd::CUHDUtil::equals(textBuf.data(),
+        output_buffer->get_decompressed_data().get(), textBuf.size());
 #endif
 
-#ifdef MULTI
+    std::cout << jsonOutput(correct, 0, output_buffer->get_uncompressed_size(), input_buffer->get_compressed_size() * sizeof(UNIT_TYPE), 
+            timings_cuda.at(0).second);
 
-    // decode the compressed data with multiple CPU-threads
-    TIMER_START(timings_multicore, "multicore")
-    MulticoreDecoder::decode(SUBSEQUENCE_SIZE, num_threads,
-        input_buffer->get_compressed_size(),
-        output_buffer, input_buffer, decoder_table);
-    TIMER_STOP
-
-    // reverse all bytes
-    output_buffer->reverse();
-
-    // check for errors in decompressed data
-    if(cuhd::CUHDUtil::equals(textBuf.data(),
-        output_buffer->get_decompressed_data().get(), textBuf.size()));
-    else std::cout << "mismatch" << std::endl;
-#endif
-
-    // print compressed size (bytes)
-    std::cout << std::left << std::setw(20)
-              << input_buffer->get_compressed_size() * sizeof(UNIT_TYPE)
-              << std::setfill(' ');
-
-    // print multicore runtime
-#ifdef MULTI
-    std::cout << std::left << std::setw(10)
-        << timings_multicore.at(0).second;
-#endif
-
-    // print GPU runtime
-#ifdef CUDA
-    std::cout << std::left << std::setw(10)
-        <<  timings_cuda.at(0).second << std::endl;
-#endif
 }
 
 void run(long int input_size, long int num_threads) {
