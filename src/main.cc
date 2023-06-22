@@ -77,7 +77,7 @@ void run_file(long int num_threads, std::string fileName) {
     std::vector<std::pair<std::string, size_t>> timings_multicore;
 
 
-    auto textBuf = stringToSymbols<uint8_t>(readFile(fileName, std::ios_base::in));
+    auto textBuf = stringToSymbols<uint8_t>(readFile(fileName, std::ios_base::in | std::ios_base::binary));
     auto dist = ANSTableGenerator::generate_distribution_from_buffer(
             SEED, NUM_STATES, textBuf.data(), textBuf.size());
 
@@ -134,7 +134,7 @@ void run_file(long int num_threads, std::string fileName) {
         gpu_out_buf, output_buffer->get_uncompressed_size(),
         gpu_table, gpu_decoder_memory, input_buffer->get_first_state(),
         input_buffer->get_first_bit(), decoder_table->get_num_entries(),
-        16, SUBSEQUENCE_SIZE, THREADS_PER_BLOCK);
+        11, SUBSEQUENCE_SIZE, THREADS_PER_BLOCK);
     TIMER_STOP
 
     // copy decompressed output from the GPU to the host system
