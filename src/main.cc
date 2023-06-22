@@ -18,7 +18,10 @@
 
 // encoder configuration //
 #define NUM_SYMBOLS 256
+
+#ifndef NUM_STATES
 #define NUM_STATES 1024
+#endif
 
 // seed for PRNG to generate random test data
 #define SEED 5
