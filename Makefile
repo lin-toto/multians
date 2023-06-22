@@ -2,7 +2,7 @@ ARCH = 75
 
 NVCC = nvcc
 NVCC_ARCH = -gencode arch=compute_$(ARCH),code=sm_$(ARCH)
-NVCC_FLAGS = --std=c++20 -O3 -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI
+NVCC_FLAGS = --std=c++20 -O3 -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI -D NUM_STATES=$(NUM_STATES)$
 #NVCC_FLAGS = --std=c++20 -G -g -arch=sm_70 -Xcompiler="-pthread" -D CUDA -D MULTI
 
 BIN = -o bin
@@ -10,7 +10,7 @@ BIN = -o bin
 INC_DIR = include
 SRC_DIR = src
 OBJ_DIR = bin
-EXEC_NAME = demo
+EXEC_NAME = multians
 
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cc)
 CU_SRC_FILES := $(wildcard $(SRC_DIR)/*.cu)
